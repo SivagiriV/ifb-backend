@@ -4,7 +4,7 @@ const twilio = require("twilio");
 const accountSid = process.env.TWILIO_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
 const client = new twilio(accountSid, authToken);
-
+console.log("Twilio client initialized");
 async function sendSms(to, message) {
   try {
     const sms = await client.messages.create({
