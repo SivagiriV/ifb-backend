@@ -15,6 +15,7 @@ router.get("/", async (req, res) => {
           { name: new RegExp(q, "i") },
           { address: new RegExp(q, "i") },
           { phone: new RegExp(q, "i") },
+          { DOE: new RegExp(q, "i") },
         ],
       };
     }

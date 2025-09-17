@@ -17,6 +17,7 @@ router.post("/", upload.single("file"), async (req, res) => {
       name: row["Name :"], // matches your header exactly
       phone: row["CONTACT"], // matches all caps
       product: row["Product :"],
+      DOE: row["DOE :"],
     }));
 
     await User.insertMany(users); // bulk insert for speed
