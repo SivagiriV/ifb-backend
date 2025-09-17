@@ -17,8 +17,13 @@ router.post("/", upload.single("file"), async (req, res) => {
       name: row["Name :"], // matches your header exactly
       phone: row["CONTACT"], // matches all caps
       product: row["Product :"],
-      DOE: row["DOE :"],
+      DOE: row["DOE :"]?.toString().trim(),
     }));
+    sheet.forEach((row, i) => {
+      console.log(i, row["DOE :"], row);
+    });
+    console.log("USERS:", users);
+    await User.deleteMany({});
 
     await User.insertMany(users); // bulk insert for speed
     res.json({ message: "File uploaded & data saved successfully!" });
