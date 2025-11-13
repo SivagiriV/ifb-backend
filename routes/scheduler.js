@@ -17,9 +17,11 @@ function formatDate(date) {
 function startScheduler() {
   // For testing: every minute. Change to "0 9 * * *" for 9AM daily
   cron.schedule("0 9 * * *", async () => {
+    console.log("⏰Cron triggered at:", new Date().toISOString());
     const today = formatDate(new Date());
     try {
       const users = await User.find();
+      console.log(`Found ${users.length} users in DB`);
       if (!Array.isArray(users)) {
         return;
       }
@@ -28,7 +30,8 @@ function startScheduler() {
         const doeDate = parseDate(user.DOE);
         const doeStr = doeDate ? formatDate(doeDate) : null;
         if (doeStr === today) {
-          const msg = `Hello ${user.name}, your ${user.product} service date ends today.`;
+          console.log(`📩 Sending SMS to ${user.phone} for ${user.name}`);
+          const msg = `Dear IFB Customer ${user.name}, your ${user.product} your free service date ends today.`;
           await sendSms(user.phone, msg);
         }
       }

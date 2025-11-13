@@ -1,26 +1,69 @@
 const express = require("express");
 const multer = require("multer");
-const XLSX = require("xlsx");
-const User = require("../models/User");
+const ExcelJS = require("exceljs");
+const Folder = require("../models/folder");
+const Customer = require("../models/customer");
+const { parsePhoneToE164 } = require("../utils/phones");
+
+const upload = multer({ dest: "uploads/" }); // simple; for production store in S3 or persistent storage
 const router = express.Router();
-const upload = multer({ dest: "uploads/" });
 
 router.post("/", upload.single("file"), async (req, res) => {
   try {
-    const workbook = XLSX.readFile(req.file.path);
-    const sheetName = workbook.SheetNames[0];
-    const sheet = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
-    // Format & save to DB
-    const users = sheet.map((row) => ({
-      name: row["Name :"], // matches your header exactly
-      phone: row["CONTACT"], // matches all caps
-      product: row["Product :"],
-      DOE: row["DOE :"]?.toString().trim(),
-    }));
-    await User.insertMany(users); // bulk insert for speed
-    res.json({ message: "File uploaded & data saved successfully!" });
+    const { folderName } = req.body;
+    if (!folderName)
+      return res.status(400).json({ error: "folderName required" });
+
+    // find or create folder
+    let folder = await Folder.findOne({ name: folderName });
+    if (!folder) folder = await Folder.create({ name: folderName });
+
+    // parse excel
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.readFile(req.file.path);
+    const worksheet = workbook.worksheets[0];
+
+    const rows = [];
+    // assume header row exists; find columns by header names or fixed positions
+    const header = {};
+    worksheet.getRow(1).eachCell((cell, colNumber) => {
+      header[cell.text.toString().toLowerCase()] = colNumber;
+    });
+
+    for (let i = 2; i <= worksheet.rowCount; i++) {
+      const row = worksheet.getRow(i);
+      if (!row) continue;
+      const name = row.getCell(header["name"] || 1).text;
+      const productName = row.getCell(header["product name"] || 2).text;
+      const mobile = row.getCell(header["mobile"] || 3).text;
+      const dateEndingRaw = row.getCell(header["date ending"] || 4).text;
+      const dateEnding = dateEndingRaw ? new Date(dateEndingRaw) : null;
+
+      const mobileE164 = parsePhoneToE164(mobile); // util to format
+
+      rows.push({
+        name,
+        productName,
+        mobile,
+        mobileE164,
+        dateEnding,
+        folder: folder._id,
+      });
+    }
+
+    // bulk insert
+    await Customer.insertMany(rows);
+
+    return res.json({
+      success: true,
+      folderId: folder._id,
+      inserted: rows.length,
+    });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error(err);
+    return res
+      .status(500)
+      .json({ error: "Upload failed", detail: err.message });
   }
 });
 

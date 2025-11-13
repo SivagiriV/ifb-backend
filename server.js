@@ -1,24 +1,20 @@
 require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
-const cors = require("cors");
+const uploadRoutes = require("./routes/upload");
+const folderRoutes = require("./routes/folders");
+const messageRoutes = require("./routes/messages");
 
-const uploadRoute = require("./routes/upload");
-const userRoute = require("./routes/user");
-const startScheduler = require("./routes/scheduler");
 const app = express();
-app.use(cors());
 app.use(express.json());
 
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => {
-    console.log("✅ MongoDB connected");
-    startScheduler();
-  })
-  .catch((err) => console.error("❌ MongoDB connection error:", err));
+mongoose.connect(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
 
-app.use("/upload", uploadRoute);
-app.use("/users", userRoute);
+app.use("/api/upload", uploadRoutes);
+app.use("/api/folders", folderRoutes);
+app.use("/api/messages", messageRoutes);
 
-app.listen(5000, () => console.log("🚀 Server running on port 5000"));
+app.listen(3000, () => console.log("Listening 3000"));
