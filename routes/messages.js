@@ -3,10 +3,7 @@ const twilio = require("twilio");
 const Customer = require("../models/customer");
 const MessageLog = require("../models/messageLog");
 
-const client = twilio(
-  process.env.TWILIO_ACCOUNT_SID,
-  process.env.TWILIO_AUTH_TOKEN
-);
+const client = twilio(process.env.TWILIO_SID, process.env.TWILIO_AUTH_TOKEN);
 const TWILIO_FROM = process.env.TWILIO_PHONE_NUMBER; // e.g. +1234567
 const TWILIO_WHATSAPP_FROM = process.env.TWILIO_WHATSAPP_FROM; // e.g. whatsapp:+1415...
 
