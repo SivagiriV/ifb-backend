@@ -43,11 +43,11 @@ router.post("/send", async (req, res) => {
           const sms = await client.messages.create({
             body: messageBody,
             from: TWILIO_FROM,
-            to: "+91" + c.mobileE164,
+            to: c.mobileE164,
           });
           logs.push({
             customer: c._id,
-            to: "+91" + c.mobileE164,
+            to: c.mobileE164,
             channel: "sms",
             status: sms.status,
             twilioSid: sms.sid,
@@ -56,7 +56,7 @@ router.post("/send", async (req, res) => {
         } catch (smsErr) {
           logs.push({
             customer: c._id,
-            to: "+91" + c.mobileE164,
+            to: c.mobileE164,
             channel: "sms",
             status: "failed",
             twilioSid: null,
@@ -69,11 +69,11 @@ router.post("/send", async (req, res) => {
           const wa = await client.messages.create({
             body: messageBody,
             from: TWILIO_WHATSAPP_FROM,
-            to: `whatsapp:+91${c.mobileE164}`,
+            to: `whatsapp:${c.mobileE164}`,
           });
           logs.push({
             customer: c._id,
-            to: "+91" + c.mobileE164,
+            to: c.mobileE164,
             channel: "whatsapp",
             status: wa.status,
             twilioSid: wa.sid,
@@ -82,7 +82,7 @@ router.post("/send", async (req, res) => {
         } catch (waErr) {
           logs.push({
             customer: c._id,
-            to: "+91" + c.mobileE164,
+            to: c.mobileE164,
             channel: "whatsapp",
             status: "failed",
             twilioSid: null,
