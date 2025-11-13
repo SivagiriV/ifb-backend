@@ -33,10 +33,10 @@ router.post("/", upload.single("file"), async (req, res) => {
     for (let i = 2; i <= worksheet.rowCount; i++) {
       const row = worksheet.getRow(i);
       if (!row) continue;
-      const name = row.getCell(header["name"] || 1).text;
-      const productName = row.getCell(header["product name"] || 2).text;
-      const mobile = row.getCell(header["mobile"] || 3).text;
-      const dateEndingRaw = row.getCell(header["date ending"] || 4).text;
+      const name = row.getCell(header["Name"] || 1).text;
+      const productName = row.getCell(header["Product"] || 2).text;
+      const mobile = row.getCell(header["Contact"] || 3).text;
+      const dateEndingRaw = row.getCell(header["DOE"] || 4).text;
       const dateEnding = dateEndingRaw ? new Date(dateEndingRaw) : null;
 
       const mobileE164 = parsePhoneToE164(mobile); // util to format
