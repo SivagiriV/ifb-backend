@@ -42,11 +42,11 @@ router.post("/", upload.single("file"), async (req, res) => {
       const mobileE164 = parsePhoneToE164(mobile); // util to format
 
       rows.push({
-        name,
-        productName,
-        mobile,
+        Name: name,
+        Product: productName,
+        Contact: mobile,
         mobileE164,
-        dateEnding,
+        DOE: dateEnding,
         folder: folder._id,
       });
     }
