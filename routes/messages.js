@@ -44,7 +44,13 @@ router.post("/send", async (req, res) => {
 
     console.log("Valid numbers:", validCustomers.length);
     console.log("Invalid numbers skipped:", invalidCount);
-
+    console.log("TWILIO_SID:", process.env.TWILIO_SID);
+    console.log(
+      "TWILIO_AUTH_TOKEN:",
+      process.env.TWILIO_AUTH_TOKEN ? "loaded" : "missing"
+    );
+    console.log("TWILIO_FROM:", TWILIO_FROM);
+    console.log("TWILIO_WA_FROM:", TWILIO_WHATSAPP_FROM);
     const results = await Promise.all(
       validCustomers.map(async (c) => {
         console.log(
