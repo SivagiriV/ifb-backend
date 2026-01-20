@@ -10,9 +10,6 @@ const TWILIO_WHATSAPP_FROM = process.env.TWILIO_WHATSAPP_FROM;
 const router = express.Router();
 
 router.post("/send", async (req, res) => {
-  console.log("📩 /send API called");
-  console.log("Request body:", req.body);
-
   try {
     let customers = [];
 
@@ -37,40 +34,17 @@ router.post("/send", async (req, res) => {
       return res.status(400).json({ error: "message required" });
     }
 
-    console.log("Message to be sent:", messageBody);
-
     const validCustomers = customers.filter((c) => c.mobileE164);
     const invalidCount = customers.length - validCustomers.length;
-
-    console.log("Valid numbers:", validCustomers.length);
-    console.log("Invalid numbers skipped:", invalidCount);
-    console.log("TWILIO_SID:", process.env.TWILIO_SID);
-    console.log(
-      "TWILIO_AUTH_TOKEN:",
-      process.env.TWILIO_AUTH_TOKEN ? "loaded" : "missing"
-    );
-    console.log("TWILIO_FROM:", TWILIO_FROM);
-    console.log("TWILIO_WA_FROM:", TWILIO_WHATSAPP_FROM);
     const results = await Promise.all(
       validCustomers.map(async (c) => {
-        console.log(
-          `\n🚀 Processing customer: ${c._id}, Mobile: ${c.mobileE164}`
-        );
-
         const logs = [];
-
-        // --- SEND SMS ---
         try {
-          console.log(`📤 Sending SMS to ${c.mobileE164}...`);
-
           const sms = await client.messages.create({
             body: messageBody,
             from: TWILIO_FROM,
             to: c.mobileE164,
           });
-
-          console.log("✅ SMS sent:", sms.sid, "Status:", sms.status);
-
           logs.push({
             customer: c._id,
             to: c.mobileE164,
@@ -80,8 +54,6 @@ router.post("/send", async (req, res) => {
             body: messageBody,
           });
         } catch (smsErr) {
-          console.error("❌ SMS FAILED for", c.mobileE164, smsErr);
-
           logs.push({
             customer: c._id,
             to: c.mobileE164,
@@ -91,19 +63,12 @@ router.post("/send", async (req, res) => {
             body: messageBody,
           });
         }
-
-        // --- SEND WHATSAPP ---
         try {
-          console.log(`📤 Sending WhatsApp to whatsapp:${c.mobileE164}...`);
-
           const wa = await client.messages.create({
-            body: messageBody,
             from: TWILIO_WHATSAPP_FROM,
             to: `whatsapp:${c.mobileE164}`,
+            contentSid: "HX67a3c5b6e60104a28b3cefb3e23e5708",
           });
-
-          console.log("✅ WhatsApp sent:", wa.sid, "Status:", wa.status);
-
           logs.push({
             customer: c._id,
             to: c.mobileE164,
@@ -113,8 +78,6 @@ router.post("/send", async (req, res) => {
             body: messageBody,
           });
         } catch (waErr) {
-          console.error("❌ WHATSAPP FAILED for", c.mobileE164, waErr);
-
           logs.push({
             customer: c._id,
             to: c.mobileE164,
@@ -124,13 +87,9 @@ router.post("/send", async (req, res) => {
             body: messageBody,
           });
         }
-
-        console.log("📝 Saving logs to DB...");
         await MessageLog.insertMany(logs);
-        console.log("✅ Logs saved for", c.mobileE164);
-
         return { customerId: c._id, mobile: c.mobileE164, logs };
-      })
+      }),
     );
 
     console.log("🎉 All messaging completed!");
