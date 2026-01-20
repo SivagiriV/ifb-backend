@@ -17,14 +17,10 @@ router.post("/send", async (req, res) => {
       console.log("📁 folderId detected:", req.body.folderId);
 
       customers = await Customer.find({ folder: req.body.folderId });
-      console.log("Customers fetched by folder:", customers.length);
     } else if (Array.isArray(req.body.customerIds)) {
       console.log("🧑‍🤝‍🧑 customerIds detected:", req.body.customerIds);
-
       customers = await Customer.find({ _id: { $in: req.body.customerIds } });
-      console.log("Customers fetched by IDs:", customers.length);
     } else {
-      console.log("❌ No customerIds or folderId provided");
       return res.status(400).json({ error: "Provide folderId or customerIds" });
     }
 
