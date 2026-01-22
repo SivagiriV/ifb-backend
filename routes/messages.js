@@ -1,12 +1,13 @@
 const express = require("express");
 const twilio = require("twilio");
+const moment = require("moment");
 const Customer = require("../models/customer");
 const MessageLog = require("../models/messageLog");
 
 const client = twilio(process.env.TWILIO_SID, process.env.TWILIO_AUTH_TOKEN);
 const TWILIO_FROM = process.env.TWILIO_PHONE;
 const TWILIO_WHATSAPP_FROM = process.env.TWILIO_WHATSAPP_FROM;
-
+const MESSAGE_CONTENT_SID = process.env.MESSAGE_CONTENT_SID;
 const router = express.Router();
 
 router.post("/send", async (req, res) => {
@@ -63,8 +64,15 @@ router.post("/send", async (req, res) => {
           const wa = await client.messages.create({
             from: TWILIO_WHATSAPP_FROM,
             to: `whatsapp:${c.mobileE164}`,
-            contentSid: "HX67a3c5b6e60104a28b3cefb3e23e5708",
+            contentSid: MESSAGE_CONTENT_SID,
+            contentVariables: JSON.stringify({
+              1: c.Name || "Customer",
+              2: c.Product,
+              3: moment().format("DD-MM-YYYY"),
+              4: "+91 9344600166",
+            }),
           });
+
           logs.push({
             customer: c._id,
             to: c.mobileE164,
