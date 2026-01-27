@@ -66,10 +66,7 @@ router.post("/send", async (req, res) => {
             to: `whatsapp:${c.mobileE164}`,
             contentSid: MESSAGE_CONTENT_SID,
             contentVariables: JSON.stringify({
-              1: c.Name || "Customer",
-              2: c.Product,
-              3: moment().format("DD-MM-YYYY"),
-              4: "+91 9344600166",
+              1: "https://forms.gle/wBtEqKEeASoZe2PD6",
             }),
           });
 
