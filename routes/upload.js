@@ -5,7 +5,7 @@ const Folder = require("../models/folder");
 const Customer = require("../models/customer");
 const { parsePhoneToE164 } = require("../utils/phones");
 
-const upload = multer({ dest: "uploads/" }); // simple; for production store in S3 or persistent storage
+const upload = multer({ dest: "uploads/" });
 const router = express.Router();
 
 router.post("/", upload.single("file"), async (req, res) => {
@@ -14,45 +14,73 @@ router.post("/", upload.single("file"), async (req, res) => {
     if (!folderName)
       return res.status(400).json({ error: "folderName required" });
 
-    // find or create folder
     let folder = await Folder.findOne({ name: folderName });
     if (!folder) folder = await Folder.create({ name: folderName });
 
-    // parse excel
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.readFile(req.file.path);
     const worksheet = workbook.worksheets[0];
 
-    const rows = [];
-    // assume header row exists; find columns by header names or fixed positions
-    const header = {};
+    /** ---------------- HEADER MAPPING ---------------- */
+    const headerMap = {};
     worksheet.getRow(1).eachCell((cell, colNumber) => {
-      header[cell.text.toString().toLowerCase()] = colNumber;
+      const key = cell.text.toString().trim().toLowerCase().replace(/\s+/g, "");
+
+      headerMap[key] = colNumber;
     });
+
+    // Required headers
+    const nameCol = headerMap["name"];
+    const productCol = headerMap["product"];
+    const contactCol = headerMap["contact"] || headerMap["mobilen"];
+    const doeCol = headerMap["doe"];
+
+    if (!nameCol || !contactCol) {
+      return res.status(400).json({
+        error: "Excel must contain Name and Contact/MOBILE N columns",
+      });
+    }
+
+    /** ---------------- ROW PARSING ---------------- */
+    const rows = [];
 
     for (let i = 2; i <= worksheet.rowCount; i++) {
       const row = worksheet.getRow(i);
-      if (!row) continue;
-      const name = row.getCell(header["Name"] || 1).text;
-      const productName = row.getCell(header["Product"] || 2).text;
-      const mobile = row.getCell(header["Contact"] || 3).text;
-      const dateEndingRaw = row.getCell(header["DOE"] || 4).text;
-      const dateEnding = dateEndingRaw ? new Date(dateEndingRaw) : null;
+      if (!row || row.actualCellCount === 0) continue;
 
-      const mobileE164 = parsePhoneToE164(mobile); // util to format
+      const name = row.getCell(nameCol)?.text?.trim();
+      const productName = productCol
+        ? row.getCell(productCol)?.text?.trim()
+        : "";
+
+      const mobile = row.getCell(contactCol)?.text?.trim();
+      if (!name || !mobile) continue;
+
+      const doeRaw = doeCol ? row.getCell(doeCol).value : null;
+
+      let dateEnding = null;
+      if (doeRaw instanceof Date) {
+        dateEnding = doeRaw;
+      } else if (typeof doeRaw === "number") {
+        dateEnding = new Date(Math.round((doeRaw - 25569) * 86400 * 1000));
+      }
 
       rows.push({
         Name: name,
         Product: productName,
         Contact: mobile,
-        mobileE164,
+        mobileE164: parsePhoneToE164(mobile),
         DOE: dateEnding,
         folder: folder._id,
       });
     }
 
-    // bulk insert
-    await Customer.insertMany(rows);
+    /** ---------------- INSERT ---------------- */
+    if (!rows.length) {
+      return res.status(400).json({ error: "No valid rows found" });
+    }
+
+    await Customer.insertMany(rows, { ordered: false });
 
     return res.json({
       success: true,
